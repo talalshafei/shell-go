@@ -45,7 +45,7 @@ func main() {
 				typeCmd = args[1]
 			}
 			switch typeCmd {
-			case "exit", "echo":
+			case "exit", "echo", "type":
 				fmt.Printf("%s is a shell builtin\n", typeCmd)
 			default:
 				fmt.Printf("%s: command not found\n", typeCmd)
