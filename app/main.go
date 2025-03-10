@@ -48,7 +48,7 @@ func main() {
 			case "exit", "echo", "type":
 				fmt.Printf("%s is a shell builtin\n", typeCmd)
 			default:
-				fmt.Printf("%s: command not found\n", typeCmd)
+				fmt.Printf("%s: not found\n", typeCmd)
 			}
 
 		default:
