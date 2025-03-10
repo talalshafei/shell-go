@@ -23,7 +23,10 @@ func main() {
 
 		cmd := args[0]
 
-		if cmd == "exit" {
+		switch cmd {
+		case "":
+			continue
+		case "exit":
 			if len(args) != 2 {
 				fmt.Println("Invalid exit code")
 				continue
@@ -34,11 +37,11 @@ func main() {
 				continue
 			}
 			os.Exit(code)
-		} else if cmd == "" {
-			continue
-
-		} else {
+		case "echo":
+			fmt.Println(strings.Join(args[1:], " "))
+		default:
 			fmt.Printf("%s: command not found\n", input)
 		}
+
 	}
 }
