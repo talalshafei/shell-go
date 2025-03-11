@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"path/filepath"
+	"os/exec"
 	"strconv"
 	"strings"
 )
@@ -96,18 +96,11 @@ func (c *Command) run() {
 
 }
 
-// Correct way manually
+// Using built-in in GO
 func (c *Command) searchPath() string {
-	pathENV := os.Getenv("PATH")
-
-	for dir := range strings.SplitSeq(pathENV, ":") {
-		fullPath := filepath.Join(dir, c.Name)
-		info, err := os.Stat(fullPath)
-		if err == nil && !info.IsDir() {
-			if info.Mode()&0111 != 0 {
-				return fullPath
-			}
-		}
+	filePath, err := exec.LookPath(c.Name)
+	if err != nil {
+		return ""
 	}
-	return ""
+	return filePath
 }
