@@ -117,6 +117,12 @@ func (c *Command) cd() {
 
 	newDir := c.Args[0]
 
+	// handle '~'
+	if newDir[0] == '~' {
+		homeDir := os.Getenv("HOME")
+		newDir = homeDir + newDir[1:]
+	}
+
 	err := os.Chdir(newDir)
 	if err != nil {
 		fmt.Printf("bash: cd: %s: No such file or directory\n", newDir)
