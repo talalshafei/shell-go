@@ -81,7 +81,7 @@ func (c *Command) typeCommand() {
 
 	typeCmd := NewCommand(name, nil)
 	switch typeCmd.Name {
-	case "exit", "echo", "type":
+	case "exit", "echo", "type", "pwd":
 		fmt.Printf("%s is a shell builtin\n", typeCmd.Name)
 	default:
 		// executables found in PATH
