@@ -42,6 +42,8 @@ func (c *Command) Execute() {
 		c.echo()
 	case "type":
 		c.typeCommand()
+	case "pwd":
+		c.pwd()
 	default:
 		// executables found in PATH
 		location := c.searchPath()
@@ -90,6 +92,15 @@ func (c *Command) typeCommand() {
 			fmt.Printf("%s: not found\n", typeCmd.Name)
 		}
 	}
+}
+
+func (c *Command) pwd() {
+	cwd, err := os.Getwd()
+	if err != nil {
+		fmt.Printf("Couldn't retrieve the current working directory: %s", err.Error())
+		return
+	}
+	fmt.Println(cwd)
 }
 
 func (c *Command) run() {
