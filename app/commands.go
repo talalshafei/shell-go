@@ -46,7 +46,7 @@ func (c *Command) Execute() {
 		// executables found in PATH
 		location := c.searchPath()
 		if location != "" {
-			c.run()
+			c.run(location)
 		} else {
 			fmt.Printf("%s: command not found\n", strings.Join(append([]string{c.Name}, c.Args...), " "))
 		}
@@ -92,8 +92,13 @@ func (c *Command) typeCommand() {
 	}
 }
 
-func (c *Command) run() {
+func (c *Command) run(location string) {
+	program := exec.Command(location, c.Args...)
+	program.Stdin = os.Stdin
+	program.Stdout = os.Stdout
+	program.Stderr = os.Stderr
 
+	program.Run()
 }
 
 // Using built-in in GO
