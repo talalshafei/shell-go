@@ -2,9 +2,9 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -96,51 +96,18 @@ func (c *Command) run() {
 
 }
 
-// Note recursive search is not really needed
-// Implementing it the hard way just for fun
+// Correct way manually
 func (c *Command) searchPath() string {
 	pathENV := os.Getenv("PATH")
 
 	for dir := range strings.SplitSeq(pathENV, ":") {
-		if location, err := findFileRecursively(dir, c.Name); err == nil && location != "" {
-			return location
+		fullPath := filepath.Join(dir, c.Name)
+		info, err := os.Stat(fullPath)
+		if err == nil && !info.IsDir() {
+			if info.Mode()&0111 != 0 {
+				return fullPath
+			}
 		}
 	}
 	return ""
-}
-
-func findFileRecursively(dir, exeName string) (string, error) {
-	d, err := os.Open(dir)
-	if err != nil {
-		return "", err
-	}
-	defer d.Close()
-
-	entries, err := d.Readdir(-1)
-	if err != nil {
-		return "", err
-	}
-
-	for _, entry := range entries {
-		fullPath := joinPaths(dir, entry.Name())
-
-		if entry.IsDir() {
-			if location, err := findFileRecursively(fullPath, exeName); err == nil && location != "" {
-				return location, nil
-			}
-		} else {
-			if entry.Name() == exeName && (entry.Mode()&0111) != 0 {
-				return fullPath, nil
-			}
-		}
-	}
-
-	return "", errors.New("not found")
-}
-
-func joinPaths(dir, entryName string) string {
-	if strings.HasSuffix(dir, "/") {
-		return dir + entryName
-	}
-	return dir + "/" + entryName
 }
