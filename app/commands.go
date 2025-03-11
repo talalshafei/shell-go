@@ -44,6 +44,8 @@ func (c *Command) Execute() {
 		c.typeCommand()
 	case "pwd":
 		c.pwd()
+	case "cd":
+		c.cd()
 	default:
 		// executables found in PATH
 		location := c.searchPath()
@@ -81,7 +83,7 @@ func (c *Command) typeCommand() {
 
 	typeCmd := NewCommand(name, nil)
 	switch typeCmd.Name {
-	case "exit", "echo", "type", "pwd":
+	case "exit", "echo", "type", "pwd", "cd":
 		fmt.Printf("%s is a shell builtin\n", typeCmd.Name)
 	default:
 		// executables found in PATH
@@ -101,6 +103,24 @@ func (c *Command) pwd() {
 		return
 	}
 	fmt.Println(cwd)
+}
+
+func (c *Command) cd() {
+	if len(c.Args) == 0 {
+		return
+	}
+
+	if len(c.Args) > 1 {
+		fmt.Println("bash: cd: too many arguments")
+		return
+	}
+
+	newDir := c.Args[0]
+
+	err := os.Chdir(newDir)
+	if err != nil {
+		fmt.Printf("bash: cd: %s: No such file or directory\n", newDir)
+	}
 }
 
 func (c *Command) run() {
