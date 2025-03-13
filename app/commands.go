@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -14,18 +13,17 @@ type Command struct {
 	Args []string
 }
 
-func TakeCommand() *Command {
-	input, err := bufio.NewReader(os.Stdin).ReadString('\n')
-	if err != nil {
-		fmt.Println("Error reading the input: ", err.Error())
-		return NewCommand("", nil)
+func StartCommand(input []string) {
+	if len(input) == 0 {
+		return
 	}
-	input = strings.TrimRight(input, "\r\n")
-
-	elems := strings.Split(input, " ")
-
-	return NewCommand(elems[0], elems[1:])
+	cmd := Command{
+		Name: input[0],
+		Args: input[1:],
+	}
+	cmd.Execute()
 }
+
 func NewCommand(name string, args []string) *Command {
 	return &Command{name, args}
 }
@@ -116,14 +114,8 @@ func (c *Command) cd() {
 	}
 
 	newDir := c.Args[0]
-
-	// handle '~'
-	if newDir[0] == '~' {
-		homeDir := os.Getenv("HOME")
-		newDir = homeDir + newDir[1:]
-	}
-
 	err := os.Chdir(newDir)
+
 	if err != nil {
 		fmt.Printf("bash: cd: %s: No such file or directory\n", newDir)
 	}
