@@ -1,9 +1,9 @@
 package shellparser
 
 import (
-	"bufio"
 	"errors"
 	"os"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -26,6 +26,9 @@ var (
 	ErrUnclosedQuotes    = errors.New("unclosed quotes")
 	ErrBackslashAtEnd    = errors.New("backslash at end of input")
 	ErrDanglingBackslash = errors.New("dangling backslash in double quotes")
+
+	// real error
+	ErrUnexpectedTokenRedirect = errors.New("bash: syntax error near unexpected token `newline'")
 )
 
 func NewParser() *Parser {
@@ -37,14 +40,6 @@ func (p *Parser) cleanParser() {
 	p.currentToken.Reset()
 	p.state = stateNormal
 	p.err = nil
-}
-
-func (p *Parser) TakeAndParseInput() ([]string, error) {
-	input, err := bufio.NewReader(os.Stdin).ReadBytes('\n')
-	if err != nil {
-		return nil, err
-	}
-	return p.Parse(input)
 }
 
 func (p *Parser) Parse(input []byte) ([]string, error) {
@@ -70,20 +65,27 @@ func (p *Parser) Parse(input []byte) ([]string, error) {
 		return nil, ErrUnclosedQuotes
 	}
 
-	p.finalizeCurrentToken()
+	p.flushCurrentToken()
 	return p.tokens, nil
 }
 
 func (p *Parser) handleNormalState(char byte, input []byte, idx *int) {
 	switch {
+	case char == '>':
+		p.handleOutputRedirect(input, idx)
+	case char == '<':
+		p.handleInputRedirect(input, idx)
+
 	case unicode.IsSpace(rune(char)):
 		p.handleWhitespace()
 	case char == '\'':
 		p.state = stateSingleQuote
 	case char == '"':
 		p.state = stateDoubleQuote
+
 	case char == '\\':
 		p.handleBackslashEscape(input, idx)
+
 	default:
 		p.currentToken.WriteByte(char)
 	}
@@ -153,9 +155,67 @@ func (p *Parser) handleDoubleQuoteBackslash(input []byte, idx *int) {
 	}
 }
 
-func (p *Parser) finalizeCurrentToken() {
+func (p *Parser) flushCurrentToken() {
 	if p.currentToken.Len() > 0 {
 		p.tokens = append(p.tokens, p.currentToken.String())
 		p.currentToken.Reset()
 	}
+}
+
+func isStringFileDescriptor(s string) bool {
+	_, err := strconv.Atoi(s)
+	return err == nil
+}
+
+// > or >>
+func (p *Parser) handleOutputRedirect(input []byte, idx *int) {
+
+	if p.raiseUnexpectedTokenRedirection(len(input), *idx) {
+		return
+	}
+
+	redirectString := "1>"
+
+	cur := p.currentToken.String()
+	if isStringFileDescriptor(cur) {
+		if cur == "2" {
+			redirectString = "2>"
+		}
+		p.currentToken.Reset()
+	} else {
+		p.flushCurrentToken()
+	}
+
+	// append
+	if input[*idx+1] == '>' {
+		redirectString += ">"
+		*idx++
+		if p.raiseUnexpectedTokenRedirection(len(input), *idx) {
+			return
+		}
+	}
+
+	p.tokens = append(p.tokens, redirectString)
+}
+
+// <
+func (p *Parser) handleInputRedirect(input []byte, idx *int) {
+	if p.raiseUnexpectedTokenRedirection(len(input), *idx) {
+		return
+	}
+	if isStringFileDescriptor(p.currentToken.String()) {
+		// remove file descriptor
+		p.currentToken.Reset()
+	} else {
+		p.flushCurrentToken()
+	}
+	p.tokens = append(p.tokens, "0<")
+}
+
+func (p *Parser) raiseUnexpectedTokenRedirection(inputSize, idx int) bool {
+	if idx+1 >= inputSize {
+		p.err = ErrUnexpectedTokenRedirect
+		return true
+	}
+	return false
 }

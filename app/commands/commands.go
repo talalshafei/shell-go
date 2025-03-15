@@ -1,7 +1,8 @@
-package main
+package commands
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strconv"
@@ -9,23 +10,62 @@ import (
 )
 
 type Command struct {
-	Name string
-	Args []string
+	Name   string
+	Args   []string
+	Stdin  io.Reader
+	Stdout io.Writer
+	Stderr io.Writer
 }
 
 func StartCommand(input []string) {
 	if len(input) == 0 {
 		return
 	}
-	cmd := Command{
-		Name: input[0],
-		Args: input[1:],
+	name := input[0]
+
+	args, stdin, stdout, stderr, err := Redirect(input[1:])
+	if err != nil {
+		return
 	}
+
+	if stdin == nil {
+		stdin = os.Stdin
+	} else {
+		defer stdin.Close()
+	}
+
+	if stdout == nil {
+		stdout = os.Stdout
+	} else {
+		defer stdout.Close()
+	}
+
+	if stderr == nil {
+		stderr = os.Stderr
+	} else {
+		defer stderr.Close()
+	}
+
+	cmd := &Command{
+		Name:   name,
+		Args:   args,
+		Stdin:  stdin,
+		Stdout: stdout,
+		Stderr: stderr,
+	}
+
 	cmd.Execute()
 }
 
 func NewCommand(name string, args []string) *Command {
-	return &Command{name, args}
+
+	return &Command{
+		Name:   name,
+		Args:   args,
+		Stdin:  os.Stdin,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+	}
 }
 
 func (c *Command) Execute() {
@@ -50,7 +90,7 @@ func (c *Command) Execute() {
 		if location != "" {
 			c.run()
 		} else {
-			fmt.Printf("%s: command not found\n", strings.Join(append([]string{c.Name}, c.Args...), " "))
+			fmt.Fprintf(c.Stderr, "%s: command not found\n", strings.Join(append([]string{c.Name}, c.Args...), " "))
 		}
 	}
 
@@ -58,12 +98,12 @@ func (c *Command) Execute() {
 
 func (c *Command) exit() {
 	if len(c.Args) == 0 {
-		fmt.Println("Invalid exit code")
+		fmt.Fprintln(c.Stderr, "Invalid exit code")
 		return
 	}
 	code, err := strconv.Atoi(c.Args[0])
 	if err != nil {
-		fmt.Println("Invalid exit code")
+		fmt.Fprintln(c.Stderr, "Invalid exit code")
 		return
 	}
 	os.Exit(code)
@@ -82,14 +122,14 @@ func (c *Command) typeCommand() {
 	typeCmd := NewCommand(name, nil)
 	switch typeCmd.Name {
 	case "exit", "echo", "type", "pwd", "cd":
-		fmt.Printf("%s is a shell builtin\n", typeCmd.Name)
+		fmt.Fprintf(c.Stdout, "%s is a shell builtin\n", typeCmd.Name)
 	default:
 		// executables found in PATH
 		location := typeCmd.searchPath()
 		if location != "" {
-			fmt.Printf("%s is %s\n", typeCmd.Name, location)
+			fmt.Fprintf(c.Stdout, "%s is %s\n", typeCmd.Name, location)
 		} else {
-			fmt.Printf("%s: not found\n", typeCmd.Name)
+			fmt.Fprintf(c.Stderr, "%s: not found\n", typeCmd.Name)
 		}
 	}
 }
@@ -97,7 +137,7 @@ func (c *Command) typeCommand() {
 func (c *Command) pwd() {
 	cwd, err := os.Getwd()
 	if err != nil {
-		fmt.Printf("Couldn't retrieve the current working directory: %s", err.Error())
+		fmt.Fprintf(c.Stderr, "Couldn't retrieve the current working directory: %s", err.Error())
 		return
 	}
 	fmt.Println(cwd)
@@ -109,7 +149,7 @@ func (c *Command) cd() {
 	}
 
 	if len(c.Args) > 1 {
-		fmt.Println("bash: cd: too many arguments")
+		fmt.Fprintln(c.Stderr, "bash: cd: too many arguments")
 		return
 	}
 
@@ -117,15 +157,15 @@ func (c *Command) cd() {
 	err := os.Chdir(newDir)
 
 	if err != nil {
-		fmt.Printf("bash: cd: %s: No such file or directory\n", newDir)
+		fmt.Fprintf(c.Stderr, "bash: cd: %s: No such file or directory\n", newDir)
 	}
 }
 
 func (c *Command) run() {
 	program := exec.Command(c.Name, c.Args...)
-	program.Stdin = os.Stdin
-	program.Stdout = os.Stdout
-	program.Stderr = os.Stderr
+	program.Stdin = c.Stdin
+	program.Stdout = c.Stdout
+	program.Stderr = c.Stderr
 
 	program.Run()
 }
