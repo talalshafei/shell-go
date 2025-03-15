@@ -110,7 +110,7 @@ func (c *Command) exit() {
 }
 
 func (c *Command) echo() {
-	fmt.Println(strings.Join(c.Args, " "))
+	fmt.Fprintln(c.Stdout, strings.Join(c.Args, " "))
 }
 
 func (c *Command) typeCommand() {
@@ -140,7 +140,7 @@ func (c *Command) pwd() {
 		fmt.Fprintf(c.Stderr, "Couldn't retrieve the current working directory: %s", err.Error())
 		return
 	}
-	fmt.Println(cwd)
+	fmt.Fprintln(c.Stdout, cwd)
 }
 
 func (c *Command) cd() {
