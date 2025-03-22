@@ -2,6 +2,7 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -52,7 +53,7 @@ func prepareOutput(path []string, append bool) (*os.File, error) {
 	if len(path) == 0 || path[0] == "\n" {
 		return nil, ErrUnexpectedTokenRedirect
 	}
-
+	fmt.Printf("%v %t\n", path, append)
 	filepathStr := strings.Join(path, "")
 	dirStr := filepath.Dir(filepathStr)
 
