@@ -32,9 +32,10 @@ const cursorStart = len(PS1) + 1
 type Editor struct {
 	*autoComplete
 	*config
-	cursor int
-	Input  []byte
-	rbuf   *bufio.Reader
+	cursor     int
+	Input      []byte
+	rbuf       *bufio.Reader
+	tabPresses uint8
 }
 
 func NewEditor() *Editor {
@@ -49,6 +50,7 @@ func NewEditor() *Editor {
 		cursor:       cursorStart,
 		Input:        nil,
 		rbuf:         reader,
+		tabPresses:   0,
 	}
 }
 
@@ -254,19 +256,33 @@ func (e *Editor) removeChar() {
 }
 
 func (e *Editor) handleAutoComplete() {
-	if len(e.Input) == 0 {
+	restOfWord, flag := e.autoComplete.completeWord(string(e.Input))
+	if flag == FOUND_NOTHING {
 		fmt.Printf("\a")
-		return
+	} else {
+		// there is a match or partial
+		e.Input = append(e.Input, []byte(restOfWord)...)
+		e.cursor += len(restOfWord)
+
+		if flag == FOUND_ONE {
+			e.Input = append(e.Input, ' ')
+			e.cursor++
+		} else {
+			e.tabPresses++
+			if e.tabPresses == 1 {
+				fmt.Printf("\a")
+				// return before resetting tab presses
+				return
+
+			} else {
+				// print all commands with shared prefixes
+				e.autoComplete.printWordsWithSharedPrefixes(string(e.Input))
+			}
+		}
 	}
 
-	restOfWord, flag := e.autoComplete.completeWord(string(e.Input))
-	if flag != FOUND_ONE {
-		fmt.Printf("\a")
-		return
-	}
-	e.Input = append(e.Input, []byte(restOfWord)...)
-	e.Input = append(e.Input, ' ')
-	e.cursor += len(restOfWord) + 1
+	// reset tab presses
+	e.tabPresses = 0
 }
 
 func (e *Editor) panicOnErr(msg string, err error) {

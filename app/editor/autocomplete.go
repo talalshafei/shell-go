@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"fmt"
 	"os"
 	"strings"
 )
@@ -31,6 +32,19 @@ func (ac *autoComplete) completeWord(partialWord string) (string, int) {
 	return ac.cmdTrie.complete(partialWord)
 }
 
+func (ac *autoComplete) printWordsWithSharedPrefixes(prefix string) {
+	fmt.Print("\n")
+
+	words := ac.cmdTrie.getWordsGivenPrefix(prefix)
+	for i, w := range words {
+		fmt.Print(w)
+		if i < len(words)-1 {
+			fmt.Print("  ")
+		}
+	}
+	fmt.Printf("\n")
+}
+
 func createCmdTrie() *Trie {
 	trie := newTrie()
 
@@ -59,13 +73,13 @@ type Trie struct {
 
 type TrieNode struct {
 	children map[byte]*TrieNode
-	word     string
+	isWord   bool
 }
 
 func newTrieNode() *TrieNode {
 	return &TrieNode{
 		children: map[byte]*TrieNode{},
-		word:     "",
+		isWord:   false,
 	}
 }
 
@@ -82,10 +96,14 @@ func (t *Trie) insert(word string) {
 		}
 		cur = cur.children[ch]
 	}
-	cur.word = word
+	cur.isWord = true
 }
 
 func (t *Trie) complete(partialWord string) (string, int) {
+	if len(partialWord) == 0 {
+		return "", FOUND_NOTHING
+	}
+
 	cur := t.root
 
 	for i := range partialWord {
@@ -96,18 +114,55 @@ func (t *Trie) complete(partialWord string) (string, int) {
 		}
 	}
 
-	var restOfWord []byte
+	var restOfWord strings.Builder
 	for len(cur.children) != 0 {
-		if len(cur.children) > 1 {
-			return "", FOUND_MULTIPLE
+		if cur.isWord || len(cur.children) > 1 {
+			return restOfWord.String(), FOUND_MULTIPLE
 		}
 		// iterate once cause map has only one item
-		for char, next := range cur.children {
-			restOfWord = append(restOfWord, char)
-			cur = next
+		for char, child := range cur.children {
+			restOfWord.WriteByte(char)
+			cur = child
 			break
 		}
 	}
 
-	return string(restOfWord), FOUND_ONE
+	return restOfWord.String(), FOUND_ONE
+}
+
+func (t *Trie) getWordsGivenPrefix(prefix string) []string {
+	cur := t.root
+
+	for i := range prefix {
+		char := prefix[i]
+
+		if child, found := cur.children[char]; found {
+			cur = child
+		} else {
+			return nil // prefix doesn't exist in the trie
+		}
+	}
+
+	result := []string{}
+	builder := []byte(prefix)
+
+	dfs(cur, &builder, &result)
+
+	return result
+}
+
+func dfs(node *TrieNode, builder *[]byte, result *[]string) {
+	if node.isWord {
+		*result = append(*result, string(*builder))
+	}
+
+	for char, child := range node.children {
+
+		*builder = append(*builder, char)
+
+		dfs(child, builder, result)
+
+		// backtrack
+		*builder = (*builder)[:len(*builder)-1]
+	}
 }
