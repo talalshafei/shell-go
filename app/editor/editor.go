@@ -83,6 +83,7 @@ func (e *Editor) processKeyPress() bool {
 
 	case '\t':
 		e.handleAutoComplete()
+		return true
 
 	case _CTRL_KEY('l'):
 		fmt.Print("\x1b[2J\x1b[H")
@@ -113,6 +114,7 @@ func (e *Editor) processKeyPress() bool {
 		}
 	}
 
+	e.tabPresses = 0
 	return true
 }
 
