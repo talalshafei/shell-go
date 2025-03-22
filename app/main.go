@@ -3,14 +3,18 @@ package main
 import (
 	"os"
 
+	"github.com/codecrafters-io/shell-starter-go/app/editor"
 	"github.com/codecrafters-io/shell-starter-go/app/shellparser"
-	"github.com/codecrafters-io/shell-starter-go/app/user_scanner"
 )
 
-func main() {
-	uScanner := user_scanner.NewUserScanner(os.Stdin)
-	parser := shellparser.NewParser()
+// register an exit function
 
-	shell := NewShell(uScanner, parser)
-	shell.Start()
+func main() {
+	editor := editor.NewEditor()
+	parser := shellparser.NewParser()
+	shell := NewShell(editor, parser)
+	exitCode := shell.Start()
+
+	editor.Destroy()
+	os.Exit(exitCode)
 }

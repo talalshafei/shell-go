@@ -4,48 +4,45 @@ import (
 	"fmt"
 
 	"github.com/codecrafters-io/shell-starter-go/app/commands"
+	"github.com/codecrafters-io/shell-starter-go/app/editor"
 	"github.com/codecrafters-io/shell-starter-go/app/shellparser"
-	"github.com/codecrafters-io/shell-starter-go/app/user_scanner"
 )
 
 type Shell struct {
-	uScanner *user_scanner.UserScanner
-	parser   *shellparser.Parser
+	editor *editor.Editor
+	parser *shellparser.Parser
 }
 
-func NewShell(u *user_scanner.UserScanner, p *shellparser.Parser) *Shell {
+func NewShell(e *editor.Editor, p *shellparser.Parser) *Shell {
 	return &Shell{
-		uScanner: u,
-		parser:   p,
+		editor: e,
+		parser: p,
 	}
 }
 
-func (sh *Shell) Start() {
-	uScanner := sh.uScanner
+func (sh *Shell) Start() int {
+	isExit, exitCode := false, 0
+
+	editor := sh.editor
 	parser := sh.parser
 
-	for {
-		fmt.Print("$ ")
-
+	for !isExit {
 		var err error
+
 		// take input
-		err = uScanner.CaptureInput()
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		rawInput := uScanner.Text
+		rawInput := editor.TakeInput()
 
 		// parse input into
 		inputStringArr, err := parser.Parse(rawInput)
 
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("%v\r\n", err)
 			continue
 		}
 
 		// prepare and start commands
-		commands.StartCommand(inputStringArr)
+		isExit, exitCode = commands.StartCommand(inputStringArr)
 	}
 
+	return exitCode
 }

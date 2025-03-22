@@ -17,15 +17,15 @@ type Command struct {
 	Stderr io.Writer
 }
 
-func StartCommand(input []string) {
+func StartCommand(input []string) (bool, int) {
 	if len(input) == 0 {
-		return
+		return false, 0
 	}
 	name := input[0]
 
 	args, stdin, stdout, stderr, err := Redirect(input[1:])
 	if err != nil {
-		return
+		return false, 0
 	}
 
 	if stdin == nil {
@@ -54,7 +54,7 @@ func StartCommand(input []string) {
 		Stderr: stderr,
 	}
 
-	cmd.Execute()
+	return cmd.Execute()
 }
 
 func NewCommand(name string, args []string) *Command {
@@ -68,14 +68,15 @@ func NewCommand(name string, args []string) *Command {
 	}
 }
 
-func (c *Command) Execute() {
+// exitCode can be used later to report the exit code of every command
+func (c *Command) Execute() (isExit bool, exitCode int) {
 
 	// builtin and empty string
 	switch c.Name {
 	case "":
 		return
 	case "exit":
-		c.exit()
+		isExit, exitCode = c.exit()
 	case "echo":
 		c.echo()
 	case "type":
@@ -94,23 +95,24 @@ func (c *Command) Execute() {
 		}
 	}
 
+	return isExit, exitCode
 }
 
-func (c *Command) exit() {
+func (c *Command) exit() (bool, int) {
 	if len(c.Args) == 0 {
-		fmt.Fprintln(c.Stderr, "Invalid exit code")
-		return
+		fmt.Fprint(c.Stderr, "Invalid exit code\n")
+		return false, 0
 	}
 	code, err := strconv.Atoi(c.Args[0])
 	if err != nil {
-		fmt.Fprintln(c.Stderr, "Invalid exit code")
-		return
+		fmt.Fprint(c.Stderr, "Invalid exit code\n")
+		return false, 0
 	}
-	os.Exit(code)
+	return true, code
 }
 
 func (c *Command) echo() {
-	fmt.Fprintln(c.Stdout, strings.Join(c.Args, " "))
+	fmt.Fprintf(c.Stdout, "%s\n", strings.Join(c.Args, " "))
 }
 
 func (c *Command) typeCommand() {
@@ -137,10 +139,10 @@ func (c *Command) typeCommand() {
 func (c *Command) pwd() {
 	cwd, err := os.Getwd()
 	if err != nil {
-		fmt.Fprintf(c.Stderr, "Couldn't retrieve the current working directory: %s", err.Error())
+		fmt.Fprintf(c.Stderr, "Couldn't retrieve the current working directory: %s\n", err.Error())
 		return
 	}
-	fmt.Fprintln(c.Stdout, cwd)
+	fmt.Fprintf(c.Stdout, "%s\n", cwd)
 }
 
 func (c *Command) cd() {
@@ -149,7 +151,7 @@ func (c *Command) cd() {
 	}
 
 	if len(c.Args) > 1 {
-		fmt.Fprintln(c.Stderr, "bash: cd: too many arguments")
+		fmt.Fprint(c.Stderr, "bash: cd: too many arguments\n")
 		return
 	}
 
