@@ -256,6 +256,7 @@ func (e *Editor) removeChar() {
 func (e *Editor) handleAutoComplete() {
 	restOfWord, flag := e.autoComplete.completeWord(string(e.Input))
 	if flag != FOUND_ONE {
+		fmt.Printf("\a")
 		return
 	}
 	e.Input = append(e.Input, []byte(restOfWord)...)
