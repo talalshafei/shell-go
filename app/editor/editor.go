@@ -75,7 +75,8 @@ func (e *Editor) processKeyPress() bool {
 	c := e.readKey()
 
 	switch c {
-	case '\r':
+	case '\r', '\n':
+		e.Input = append(e.Input, '\n') // for parser
 		return false
 
 	case '\t':

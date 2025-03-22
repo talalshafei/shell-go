@@ -2,7 +2,6 @@ package commands
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -53,25 +52,13 @@ func prepareOutput(path []string, append bool) (*os.File, error) {
 	if len(path) == 0 || path[0] == "\n" {
 		return nil, ErrUnexpectedTokenRedirect
 	}
+
 	filepathStr := strings.Join(path, "")
 
-	// Get the directory part
 	dirStr := filepath.Dir(filepathStr)
 
-	// Create the directory with specific error handling
-	if dirStr != "." {
-		err := os.MkdirAll(dirStr, 0777)
-		if err != nil {
-			// Log the specific error for debugging
-			fmt.Fprintf(os.Stderr, "Failed to create directory '%s': %v\n", dirStr, err)
-			return nil, err
-		}
-	}
-
-	// Verify the directory exists before proceeding
-	dirInfo, err := os.Stat(dirStr)
-	if err != nil || !dirInfo.IsDir() {
-		return nil, fmt.Errorf("directory '%s' could not be created or accessed", dirStr)
+	if err := os.MkdirAll(dirStr, 0777); err != nil {
+		return nil, err
 	}
 
 	flags := os.O_WRONLY | os.O_CREATE
