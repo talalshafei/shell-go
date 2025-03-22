@@ -53,12 +53,25 @@ func prepareOutput(path []string, append bool) (*os.File, error) {
 	if len(path) == 0 || path[0] == "\n" {
 		return nil, ErrUnexpectedTokenRedirect
 	}
-	fmt.Printf("%v %t\n", path, append)
 	filepathStr := strings.Join(path, "")
+
+	// Get the directory part
 	dirStr := filepath.Dir(filepathStr)
 
-	if err := os.MkdirAll(dirStr, 0777); err != nil {
-		return nil, err
+	// Create the directory with specific error handling
+	if dirStr != "." {
+		err := os.MkdirAll(dirStr, 0777)
+		if err != nil {
+			// Log the specific error for debugging
+			fmt.Fprintf(os.Stderr, "Failed to create directory '%s': %v\n", dirStr, err)
+			return nil, err
+		}
+	}
+
+	// Verify the directory exists before proceeding
+	dirInfo, err := os.Stat(dirStr)
+	if err != nil || !dirInfo.IsDir() {
+		return nil, fmt.Errorf("directory '%s' could not be created or accessed", dirStr)
 	}
 
 	flags := os.O_WRONLY | os.O_CREATE
@@ -68,7 +81,7 @@ func prepareOutput(path []string, append bool) (*os.File, error) {
 		flags |= os.O_TRUNC
 	}
 
-	file, err := os.OpenFile(filepathStr, flags, 0777)
+	file, err := os.OpenFile(filepathStr, flags, 0666)
 
 	if err != nil {
 		return nil, err
