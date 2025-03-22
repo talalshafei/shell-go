@@ -56,7 +56,7 @@ func prepareOutput(path []string, append bool) (*os.File, error) {
 	filepathStr := strings.Join(path, "")
 	dirStr := filepath.Dir(filepathStr)
 
-	if err := os.MkdirAll(dirStr, 0755); err != nil {
+	if err := os.MkdirAll(dirStr, 0777); err != nil {
 		return nil, err
 	}
 
