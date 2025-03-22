@@ -3,32 +3,90 @@
 This is a starting point for Go solutions to the
 ["Build Your Own Shell" Challenge](https://app.codecrafters.io/courses/shell/overview).
 
-In this challenge, you'll build your own POSIX compliant shell that's capable of
-interpreting shell commands, running external programs and builtin commands like
-cd, pwd, echo and more. Along the way, you'll learn about shell command parsing,
-REPLs, builtin commands, and more.
+# GoShell
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+GoShell is a custom POSIX-compliant shell written in Go. Built as part of the CodeCrafters Shell Challenge, GoShell provides an interactive command-line environment that can interpret shell commands, run external programs, and handle built-in commands with a modern, efficient design.
 
-# Passing the first stage
+## Overview
 
-The entry point for your `shell` implementation is in `app/main.go`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
+GoShell is designed to give users a familiar Unix-like command-line interface. Along the way, the project explores low-level terminal operations, custom command parsing, and advanced features like autocomplete. The development process deepened my understanding of terminal raw mode, and data structures in Go.
+**Usage:** To run the shell, simply execute the provided `run.sh` script:
 
 ```sh
-git commit -am "pass 1st stage" # any msg
-git push origin master
+./run.sh
 ```
 
-Time to move on to the next stage!
+## Features
 
-# Stage 2 & beyond
+### Core Capabilities
 
-Note: This section is for stages 2 and beyond.
+- **Command Execution**: Run external programs and capture their output.
+- **Input/Output Redirection**: Support for `>`, `>>`, and `<` operators.
+- **Autocompletion**: autocomplete commands with `\t`.
 
-1. Ensure you have `go (1.24)` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `app/main.go`.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+### Built-in Commands
+
+- `exit`: Terminate the shell.
+- `echo`: Display text to stdout.
+- `type`: Show command information.
+- `pwd`: Print current working directory.
+- `cd`: Change the current directory.
+
+### Interactive Enhancements
+
+- **Raw Mode Terminal**: Direct control over terminal input by manually putting it in raw mode.
+- **Trie-Based Autocomplete**: Efficiently suggest completions for commands and file names.
+- **Command History Navigation**: Browse and reuse previous commands.
+- **Dynamic Cursor Control**: Real-time handling of cursor positions, insertions, and key events.
+
+### Advanced Parsing
+
+- **Quote and Escape Handling**: Parse single and double quotes, along with escaped characters.
+- **Token Recognition**: Break down input into meaningful commands and arguments.
+- **Redirection Parsing**: Detect and handle redirection operators.
+
+## Implementation Details
+
+### Terminal Management
+
+GoShell manually sets the terminal into raw mode, allowing it to process each keystroke individually. This enables:
+
+- Fine-grained control of input/output.
+- Custom key bindings.
+- Immediate display updates and precise cursor management.
+- Signal handling (e.g., interrupts via Ctrl+C).
+
+### Command Parser
+
+The shell’s parser tokenizes user input and handles:
+
+- Environment variable and home directory expansion.
+- Special tokens (quotes, redirection symbols, etc.).
+- Conversion of raw input into a structured format for execution.
+
+### Autocomplete with Trie
+
+The autocomplete system uses a Trie data structure:
+
+- **Efficient Lookup**: Quickly suggests completions based on the current input prefix.
+- **Memory Efficiency**: Stores command and file names in a compact format.
+- **Seamless Integration**: Enhances the interactive experience by suggesting completions as you type.
+
+### Process Management
+
+GoShell launches external programs by:
+
+- Creating and managing subprocesses.
+- Setting up proper I/O redirection.
+- Propagating signals and handling exit codes correctly.
+
+## Future Enhancements
+
+While GoShell currently supports many core features, future improvements may include:
+
+- **Piping and Job Control**: Advanced features to handle pipelines and background tasks.
+- **History Navigation**: More intuitive history search and manipulation.
+
+## Acknowledgments
+
+I would like to extend my gratitude to [CodeCrafters](https://app.codecrafters.io/catalog) for designing this challenge. It pushed me to explore deep system-level programming in Go, improved my skills significantly, and sparked new ideas for future projects.
