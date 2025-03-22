@@ -254,6 +254,11 @@ func (e *Editor) removeChar() {
 }
 
 func (e *Editor) handleAutoComplete() {
+	if len(e.Input) == 0 {
+		fmt.Printf("\a")
+		return
+	}
+
 	restOfWord, flag := e.autoComplete.completeWord(string(e.Input))
 	if flag != FOUND_ONE {
 		fmt.Printf("\a")

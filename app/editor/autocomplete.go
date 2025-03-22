@@ -1,5 +1,10 @@
 package editor
 
+import (
+	"os"
+	"strings"
+)
+
 const (
 	FOUND_NOTHING = iota
 	FOUND_ONE
@@ -27,10 +32,22 @@ func (ac *autoComplete) completeWord(partialWord string) (string, int) {
 }
 
 func createCmdTrie() *Trie {
-	commandsNames := []string{"echo", "exit"}
 	trie := newTrie()
-	for _, name := range commandsNames {
+
+	builtinCommands := []string{"exit", "echo", "type", "pwd", "cd"}
+	for _, name := range builtinCommands {
 		trie.insert(name)
+	}
+
+	for dir := range strings.SplitSeq(os.Getenv("PATH"), ":") {
+		files, err := os.ReadDir(dir)
+		if err != nil {
+			continue
+		}
+
+		for _, file := range files {
+			trie.insert(file.Name())
+		}
 	}
 
 	return trie
