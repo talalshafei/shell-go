@@ -67,7 +67,7 @@ func prepareOutput(path []string, append bool) (*os.File, error) {
 		flags |= os.O_TRUNC
 	}
 
-	file, err := os.OpenFile(filepathStr, flags, 0644)
+	file, err := os.OpenFile(filepathStr, flags, 0777)
 
 	if err != nil {
 		return nil, err
