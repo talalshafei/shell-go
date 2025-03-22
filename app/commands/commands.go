@@ -24,7 +24,9 @@ func StartCommand(input []string) (bool, int) {
 	name := input[0]
 
 	args, stdin, stdout, stderr, err := Redirect(input[1:])
+
 	if err != nil {
+		fmt.Println(err)
 		return false, 0
 	}
 

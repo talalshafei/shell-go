@@ -36,7 +36,7 @@ func (sh *Shell) Start() int {
 		inputStringArr, err := parser.Parse(rawInput)
 
 		if err != nil {
-			fmt.Printf("%v\r\n", err)
+			fmt.Println(err)
 			continue
 		}
 

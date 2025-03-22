@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -52,7 +53,12 @@ func prepareOutput(path []string, append bool) (*os.File, error) {
 		return nil, ErrUnexpectedTokenRedirect
 	}
 
-	filepath := strings.Join(path, "")
+	filepathStr := strings.Join(path, "")
+	dirStr := filepath.Dir(filepathStr)
+
+	if err := os.MkdirAll(dirStr, 0755); err != nil {
+		return nil, err
+	}
 
 	flags := os.O_WRONLY | os.O_CREATE
 	if append {
@@ -61,7 +67,7 @@ func prepareOutput(path []string, append bool) (*os.File, error) {
 		flags |= os.O_TRUNC
 	}
 
-	file, err := os.OpenFile(filepath, flags, 0644)
+	file, err := os.OpenFile(filepathStr, flags, 0644)
 
 	if err != nil {
 		return nil, err
@@ -75,8 +81,8 @@ func prepareInput(path []string) (*os.File, error) {
 		return nil, ErrUnexpectedTokenRedirect
 	}
 
-	filepath := strings.Join(path, "")
-	file, err := os.Open(filepath)
+	filepathStr := strings.Join(path, "")
+	file, err := os.Open(filepathStr)
 	if err != nil {
 		return nil, err
 	}

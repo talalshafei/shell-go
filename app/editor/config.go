@@ -49,13 +49,13 @@ func (c *config) enableRawMode() {
 	raw.Cc[unix.VTIME] = 0 // blocking until 1 byte
 
 	if err = unix.IoctlSetTermios(fd, unix.TCSETS, raw); err != nil {
-		log.Panicf("enableRawMode: %s\r\n", err.Error())
+		log.Panicf("enableRawMode: %s\n", err.Error())
 	}
 
 }
 
 func (c *config) disableRawMode() {
 	if err := unix.IoctlSetTermios(int(os.Stdin.Fd()), unix.TCSETS, c.oldState); err != nil {
-		log.Panicf("enableRawMode: %s\r\n", err.Error())
+		log.Panicf("disableRawMode: %s\n", err.Error())
 	}
 }
