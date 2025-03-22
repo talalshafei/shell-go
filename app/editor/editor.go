@@ -258,7 +258,8 @@ func (e *Editor) handleAutoComplete() {
 		return
 	}
 	e.Input = append(e.Input, []byte(restOfWord)...)
-	e.cursor += len(restOfWord)
+	e.Input = append(e.Input, ' ')
+	e.cursor += len(restOfWord) + 1
 }
 
 func (e *Editor) panicOnErr(msg string, err error) {
