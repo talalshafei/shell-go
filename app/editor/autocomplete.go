@@ -156,13 +156,17 @@ func dfs(node *TrieNode, builder *[]byte, result *[]string) {
 		*result = append(*result, string(*builder))
 	}
 
-	for char, child := range node.children {
+	// traverse in alphabetical order
+	// range of all printable chars
+	for i := range 127 {
+		char := byte(i)
+		if child, found := node.children[char]; found {
+			*builder = append(*builder, char)
 
-		*builder = append(*builder, char)
+			dfs(child, builder, result)
 
-		dfs(child, builder, result)
-
-		// backtrack
-		*builder = (*builder)[:len(*builder)-1]
+			// backtrack
+			*builder = (*builder)[:len(*builder)-1]
+		}
 	}
 }
