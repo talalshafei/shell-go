@@ -34,6 +34,7 @@ func (sh *Shell) Start() int {
 
 		// parse input into
 		inputStringArr, err := parser.Parse(rawInput)
+		// fmt.Printf("%#v", inputStringArr)
 
 		if err != nil {
 			fmt.Println(err)
@@ -41,7 +42,7 @@ func (sh *Shell) Start() int {
 		}
 
 		// prepare and start commands
-		isExit, exitCode = commands.StartCommand(inputStringArr)
+		isExit, exitCode = commands.StartCommands(inputStringArr)
 	}
 
 	return exitCode

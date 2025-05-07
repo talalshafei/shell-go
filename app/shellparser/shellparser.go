@@ -29,6 +29,7 @@ var (
 
 	// real error
 	ErrUnexpectedTokenRedirect = errors.New("bash: syntax error near unexpected token `newline'")
+	ErrUnexpectedTokenPipe     = errors.New("bash: syntax error near unexpected token `|'")
 )
 
 func NewParser() *Parser {
@@ -85,6 +86,14 @@ func (p *Parser) handleNormalState(char byte, input []byte, idx *int) {
 
 	case char == '\\':
 		p.handleBackslashEscape(input, idx)
+
+	case char == '|':
+		if (len(p.tokens) == 0 && p.currentToken.Len() == 0) || (len(p.tokens) > 0 && p.tokens[len(p.tokens)-1] == "|") {
+			p.err = ErrUnexpectedTokenPipe
+			return
+		}
+		p.flushCurrentToken()
+		p.tokens = append(p.tokens, "|")
 
 	default:
 		p.currentToken.WriteByte(char)

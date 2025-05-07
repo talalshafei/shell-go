@@ -17,6 +17,104 @@ type Command struct {
 	Stderr io.Writer
 }
 
+func splitOnPipes(input []string) [][]string {
+	res := [][]string{}
+	cmd := []string{}
+
+	for _, s := range input {
+		if s == "|" {
+			res = append(res, cmd)
+			cmd = []string{}
+		} else {
+			cmd = append(cmd, s)
+		}
+	}
+	if len(cmd) > 0 {
+		res = append(res, cmd)
+	}
+	return res
+}
+
+func StartCommands(input []string) (bool, int) {
+	rawCmds := splitOnPipes(input)
+	count := len(rawCmds)
+	if count == 0 {
+		return false, 0
+	}
+
+	cmds := make([]*Command, 0, count)
+	for _, cmdFields := range rawCmds {
+		if len(cmdFields) == 0 {
+			continue
+		}
+
+		name := cmdFields[0]
+		args, stdin, stdout, stderr, err := Redirect(cmdFields[1:])
+
+		if err != nil {
+			return false, 0
+		}
+
+		if stdin == nil {
+			stdin = os.Stdin
+		}
+
+		if stdout == nil {
+			stdout = os.Stdout
+		}
+
+		if stderr == nil {
+			stderr = os.Stderr
+		}
+
+		cmd := &Command{
+			Name:   name,
+			Args:   args,
+			Stdin:  stdin,
+			Stdout: stdout,
+			Stderr: stderr,
+		}
+
+		cmds = append(cmds, cmd)
+	}
+
+	// connect with pipes
+	for i := range count - 1 {
+		r, w := io.Pipe()
+		if cmds[i].Stdout == os.Stdout {
+			cmds[i].Stdout = w
+		}
+		if cmds[i+1].Stdin == os.Stdin {
+			cmds[i+1].Stdin = r
+		}
+	}
+
+	closeRecourses := func(cmd *Command) {
+		if closer, ok := cmd.Stdout.(io.Closer); ok && cmd.Stdout != os.Stdout {
+			closer.Close()
+		}
+
+		if closer, ok := cmd.Stdin.(io.Closer); ok && cmd.Stdin != os.Stdin {
+			closer.Close()
+		}
+
+		if closer, ok := cmd.Stderr.(io.Closer); ok && cmd.Stderr != os.Stderr {
+			closer.Close()
+		}
+	}
+
+	for i := range count - 1 {
+		go func(cmd *Command) {
+			cmd.Execute()
+			closeRecourses(cmd)
+
+		}(cmds[i])
+	}
+
+	defer closeRecourses(cmds[count-1])
+	return cmds[count-1].Execute()
+}
+
 func StartCommand(input []string) (bool, int) {
 	if len(input) == 0 {
 		return false, 0
