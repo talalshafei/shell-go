@@ -23,6 +23,7 @@ GoShell is designed to give users a familiar Unix-like command-line interface. A
 - **Command Execution**: Run external programs and capture their output.
 - **Input/Output Redirection**: Support for `>`, `>>`, and `<` operators.
 - **Autocompletion**: autocomplete commands with `\t`.
+- **Piping**: handle pipelines efficiently using go-routines.
 
 ### Built-in Commands
 
@@ -84,8 +85,8 @@ GoShell launches external programs by:
 
 While GoShell currently supports many core features, future improvements may include:
 
-- **Piping and Job Control**: Advanced features to handle pipelines and background tasks.
 - **History Navigation**: More intuitive history search and manipulation.
+- **Job Control**: Advance features to handle background tasks.
 
 ## Acknowledgments
 

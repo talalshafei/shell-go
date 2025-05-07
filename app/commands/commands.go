@@ -114,49 +114,6 @@ func StartCommands(input []string) (bool, int) {
 	defer closeRecourses(cmds[count-1])
 	return cmds[count-1].Execute()
 }
-
-func StartCommand(input []string) (bool, int) {
-	if len(input) == 0 {
-		return false, 0
-	}
-	name := input[0]
-
-	args, stdin, stdout, stderr, err := Redirect(input[1:])
-
-	if err != nil {
-		fmt.Println(err)
-		return false, 0
-	}
-
-	if stdin == nil {
-		stdin = os.Stdin
-	} else {
-		defer stdin.Close()
-	}
-
-	if stdout == nil {
-		stdout = os.Stdout
-	} else {
-		defer stdout.Close()
-	}
-
-	if stderr == nil {
-		stderr = os.Stderr
-	} else {
-		defer stderr.Close()
-	}
-
-	cmd := &Command{
-		Name:   name,
-		Args:   args,
-		Stdin:  stdin,
-		Stdout: stdout,
-		Stderr: stderr,
-	}
-
-	return cmd.Execute()
-}
-
 func NewCommand(name string, args []string) *Command {
 
 	return &Command{
